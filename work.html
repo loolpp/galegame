@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 手机适配核心配置，禁止缩放、完美贴合屏幕 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>外出打工</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* 去除手机点击高亮 */
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: "微软雅黑", sans-serif;
+            background: url("./tupian/qiaozhi-beijin.jpg") center / cover;
+        }
+        .global-mask {
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.45);
+            padding: 12px;
+            overflow-y: auto; /* 页面整体垂直滚动，防止内容溢出屏幕 */
+        }
+        /* 返回按钮 */
+        .back-home {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            font-size: 18px;
+            color: #8B4513;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0.25);
+            margin-bottom: 12px;
+        }
+        .back-home:active {
+            background: #d4af37;
+            color: #fff;
+        }
+        /* 顶部统一资源栏 小屏自动换行缩小字体 */
+        .top-res-bar {
+            display: flex;
+            gap: 6px 10px;
+            font-size: 12px;
+            color: #7722bb;
+            flex-wrap: wrap;
+            background: rgba(255,255,0.88);
+            padding: 8px 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0.2);
+            margin-bottom: 16px;
+        }
+        /* 页面标题 缩小适配手机 */
+        .page-title {
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 2px 8px #000;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        /* ========== 核心：横向滑动卡片容器 ========== */
+        .work-card-wrap {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto; /* 开启横向滚动 */
+            overflow-y: hidden;
+            padding: 10px 4px 14px;
+            /* 滚动顺滑优化 */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* 美化横向滚动条 */
+        .work-card-wrap::-webkit-scrollbar {
+            height: 6px;
+        }
+        .work-card-wrap::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+        .work-card-wrap::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.6);
+            border-radius: 10px;
+        }
+        /* 打工点位卡片 自适应宽度，小屏更窄 */
+        .place-card {
+            min-width: 160px;
+            max-width: 190px;
+            flex-shrink: 0; /* 禁止卡片压缩，保证横向滑动 */
+            background: rgba(255,255,255,0.92);
+            border-radius: 12px;
+            padding: 14px 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0.3);
+            text-align: center;
+        }
+        .place-card h3 {
+            font-size: 16px;
+            color: #8B4513;
+            margin-bottom: 8px;
+        }
+        .tip-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .cost-sta {
+            color: #f23c3c;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .gain-gold {
+            color: #27a327;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+        /* 打工按钮 加大高度，手机更好点击 */
+        .start-work-btn {
+            width: 100%;
+            padding: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: #d4af37;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .start-work-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .start-work-btn:active:not(:disabled) {
+            opacity: 0.8;
+            transform: scale(0.97);
+        }
+    </style>
+</head>
+<body>
+    <div class="global-mask">
+        <!-- 返回主界面 -->
+        <button class="back-home" onclick="returnMain()">←</button>
+        <!-- 紫色统一资源栏 -->
+        <div class="top-res-bar">
+            <span>时段:<span id="timeText"></span></span>
+            <span>体力:<span id="staminaText"></span></span>
+            <span>金币:<span id="moneyText"></span></span>
+            <span>灵晶:<span id="lingjingText"></span></span>
+            <span>宝石:<span id="baoshiText"></span></span>
+        </div>
+        <h2 class="page-title">外出打工赚取货币</h2>
+        <!-- 横向滑动卡片容器 -->
+        <div class="work-card-wrap">
+            <!-- 校园小树林 -->
+            <div class="place-card">
+                <h3>校园小树林</h3>
+                <div class="tip-text">安静轻松，基础收益</div>
+                <div class="cost-sta">消耗体力：30</div>
+                <div class="gain-gold">获得金币：100</div>
+                <button class="start-work-btn" onclick="workRun(30,100,false)">前往打工</button>
+            </div>
+            <!-- 教学楼 -->
+            <div class="place-card">
+                <h3>教学楼</h3>
+                <div class="tip-text">整理教室，稳定收入</div>
+                <div class="cost-sta">消耗体力：30</div>
+                <div class="gain-gold">获得金币：100</div>
+                <button class="start-work-btn" onclick="workRun(30,100,false)">前往打工</button>
+            </div>
+            <!-- 校园小广场 -->
+            <div class="place-card">
+                <h3>校园小广场</h3>
+                <div class="tip-text">简单打杂，收益偏低</div>
+                <div class="cost-sta">消耗体力：30</div>
+                <div class="gain-gold">获得金币：50</div>
+                <button class="start-work-btn" onclick="workRun(30,50,false)">前往打工</button>
+            </div>
+            <!-- 校外酒馆 -->
+            <div class="place-card">
+                <h3>校外酒馆</h3>
+                <div class="tip-text">后厨帮忙，报酬更高</div>
+                <div class="cost-sta">消耗体力：50</div>
+                <div class="gain-gold">获得金币：400</div>
+                <button class="start-work-btn" onclick="workRun(50,400,false)">前往打工</button>
+            </div>
+            <!-- 校外御花园（随机事件） -->
+            <div class="place-card">
+                <h3>校外御花园</h3>
+                <div class="tip-text">高额报酬，偶遇随机剧情</div>
+                <div class="cost-sta">消耗体力：200</div>
+                <div class="gain-gold">获得金币：500</div>
+                <button class="start-work-btn" onclick="workRun(200,500,true)">前往打工</button>
+            </div>
+        </div>
+    </div>
+    <audio id="bgMusic" loop preload="auto" style="display: none;">
+        <source src="yinyue.mp3" type="audio/mpeg">
+    
+        <script>
+            // 剧情奖励映射，和main、story完全统一（新增缺失常量）
+            const STORY_REWARD_MAP = {
+                specialGarden: {favor:450, gold:4200}
+            };
+        
+            // 劫持localStorage，全局派发修改事件
+            const originSetItem = localStorage.setItem;
+            const originRemoveItem = localStorage.removeItem;
+            localStorage.setItem = function(key, val) {
+                originSetItem.call(localStorage, key, val);
+                window.dispatchEvent(new CustomEvent("localChange", {
+                    detail: { key, value: val }
+                }));
+            };
+            localStorage.removeItem = function(key) {
+                originRemoveItem.call(localStorage, key);
+                window.dispatchEvent(new CustomEvent("localChange", {
+                    detail: { key, value: null }
+                }));
+            };
+        // 全屏兼容函数
+        function requestFullscreen() {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen();
+            else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+            else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+        }
+        // ===================== 全局统一时间计算 =====================
+        const REAL_DAY_MS = 1.5 * 60 * 60 * 1000;
+        const GAME_DAY_HOUR = 24;
+        const GAME_SEG_HOUR = 8;
+        function calcGameTimeFlow() {
+            const data = loadResourceData();
+            const nowMs = Date.now();
+            if (data.isDebugTime === true) {
+                const passRealMs = nowMs - data.gameRealLastStamp;
+                const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+                const todayHour = passGameHour % GAME_DAY_HOUR;
+                let period;
+                if (todayHour < GAME_SEG_HOUR) {
+                    period = "早晨";
+                    data.nightRefreshFlag = false;
+                } else if (todayHour < GAME_SEG_HOUR * 2) {
+                    period = "中午";
+                } else {
+                    period = "夜晚";
+                    if (!data.nightRefreshFlag) {
+                        data.stamina = data.maxStamina;
+                        data.nightRefreshFlag = true;
+                    }
+                }
+                saveResourceData(data);
+                return { period };
+            }
+            if (!data.gameRealLastStamp) {
+                data.gameRealLastStamp = nowMs;
+                saveResourceData(data);
+                return { period: "早晨" };
+            }
+            const passRealMs = nowMs - data.gameRealLastStamp;
+            const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+            const addDay = Math.floor(passGameHour / GAME_DAY_HOUR);
+            const todayHour = passGameHour % GAME_DAY_HOUR;
+            data.gameDayCount = (data.gameDayCount || 0) + addDay;
+            let period;
+            if (todayHour < GAME_SEG_HOUR) {
+                period = "早晨";
+                data.nightRefreshFlag = false;
+            } else if (todayHour < GAME_SEG_HOUR * 2) {
+                period = "中午";
+            } else {
+                period = "夜晚";
+                if (!data.nightRefreshFlag) {
+                    data.stamina = data.maxStamina;
+                    data.nightRefreshFlag = true;
+                }
+            }
+            data.gameRealLastStamp = nowMs;
+            saveResourceData(data);
+            return { period };
+        }
+        function refreshGameTimeUI() {
+            const timeInfo = calcGameTimeFlow();
+            const timeDom = document.getElementById("timeText");
+            if (timeDom) timeDom.innerText = timeInfo.period;
+        }
+        // ===================== 全局资源存储 =====================
+        const GAME_DATA_KEY = "gameResourceData";
+        const SHOP_CURRENCY_KEY = "shopCurrency";
+        function getDefaultResourceData() {
+            return {
+                money: 0,
+                stamina: 200,
+                maxStamina: 200,
+                nightRefreshFlag: false,
+                gameRealLastStamp: 0,
+                gameDayCount: 0,
+                isDebugTime: false
+            }
+        }
+        function loadResourceData() {
+            let save = localStorage.getItem(GAME_DATA_KEY);
+            return save ? JSON.parse(save) : getDefaultResourceData();
+        }
+        function saveResourceData(data) {
+            localStorage.setItem(GAME_DATA_KEY, JSON.stringify(data));
+        }
+        // 补充缺失存档函数（修复跳转报错）
+        function saveDataToLocalStorage() {
+            saveResourceData(loadResourceData());
+        }
+        // 灵晶宝石
+        function getDefaultShopCurrency() {
+            return { lingjing: 0, baoshi: 0 };
+        }
+        function loadShopCurrency() {
+            let save = localStorage.getItem(SHOP_CURRENCY_KEY);
+            return save ? JSON.parse(save) : getDefaultShopCurrency();
+        }
+        function refreshShopCurrencyUI() {
+            const curr = loadShopCurrency();
+            const lingDom = document.getElementById('lingjingText');
+            const baoDom = document.getElementById('baoshiText');
+            if (lingDom) lingDom.textContent = curr.lingjing;
+            if (baoDom) baoDom.textContent = curr.baoshi;
+        }
+        function refreshResourceUI() {
+            const data = loadResourceData();
+            const staDom = document.getElementById("staminaText");
+            const goldDom = document.getElementById("moneyText");
+            if (staDom) staDom.innerText = `${data.stamina}/${data.maxStamina}`;
+            if (goldDom) goldDom.innerText = data.money;
+            const stamina = data.stamina;
+            const btns = document.querySelectorAll(".start-work-btn");
+            btns[0].disabled = stamina < 30;
+            btns[1].disabled = stamina < 30;
+            btns[2].disabled = stamina < 30;
+            btns[3].disabled = stamina < 50;
+            btns[4].disabled = stamina < 200;
+        }
+        function refreshAllUI() {
+            refreshGameTimeUI();
+            refreshResourceUI();
+            refreshShopCurrencyUI();
+        }
+        // ===================== 打工核心逻辑（新增剧情判定调用） =====================
+        window.workRun = function(costSta, rewardGold, hasRandomEvent) {
+            let data = loadResourceData();
+            if(data.stamina < costSta) {
+                alert("当前体力不足，无法前往打工！");
+                return;
+            }
+            data.stamina -= costSta;
+            data.money += rewardGold;
+            saveResourceData(data);
+            if(hasRandomEvent) {
+                alert(`打工结束！消耗${costSta}体力，获得${rewardGold}金币\n途中偶遇特殊随机剧情！`);
+            } else {
+                alert(`打工结束！消耗${costSta}体力，获得${rewardGold}金币`);
+            }
+            refreshAllUI();
+            // 【核心修复】御花园打工结算后执行概率剧情判定
+            if(hasRandomEvent){
+                checkWorkRandomStory();
+            }
+        }
+        // 打工随机御花园剧情逻辑
+        function checkWorkRandomStory() {
+            const today = new Date().toLocaleDateString();
+            const dayFlag = localStorage.getItem("workStoryDay");
+            if(dayFlag === today) return;
+            // 20%触发概率
+            if(Math.random() >= 0.2) return;
+            localStorage.setItem("workStoryDay", today);
+            localStorage.setItem("storyFinishReward", JSON.stringify(STORY_REWARD_MAP.specialGarden));
+            alert("打工偶遇御花园秘境，即将进入专属剧情！");
+            saveDataToLocalStorage();
+            // 延迟300ms保证存储落地再跳转
+            setTimeout(()=>{
+                window.location.href = "story.html?id=specialGarden";
+            },300);
+        }
+        // 返回大厅
+        window.returnMain = function() {
+            window.location.href = "main.html";
+        }
+        // 同步监听
+        function syncAllChange(e) {
+            const key = e.detail.key;
+            if(key === GAME_DATA_KEY){
+                refreshResourceUI();
+                refreshGameTimeUI();
+            }
+            if(key === SHOP_CURRENCY_KEY){
+                refreshShopCurrencyUI();
+            }
+        }
+        window.addEventListener("localChange", syncAllChange);
+        window.addEventListener("storage", syncAllChange);
+        setInterval(() => {
+            refreshGameTimeUI();
+        }, 30000);
+        // 页面初始化
+        window.onload = function() {
+            setTimeout(requestFullscreen, 300);
+            refreshAllUI();
+            document.addEventListener('click', () => bgMusic.play().catch(e=>{}), { once: true });
+            document.addEventListener('touchstart', () => bgMusic.play().catch(e=>{}), { once: true });
+        }
+        </script>
+</body>
+</html>

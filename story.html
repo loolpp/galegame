@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- 手机适配核心标签，禁止缩放 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+<title>剧情故事</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:微软雅黑,Microsoft YaHei;}
+html,body{width:100vw;height:100vh;background:#f8efe2;overflow:hidden;touch-action:none;}
+.story-wrap{
+    width:100%;
+    height:100%;
+    padding: 8vw 6vw;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+/* 剧情文本区域：垂直滚动核心 */
+.story-scroll-box{
+    flex:1;
+    width:100%;
+    max-height:78vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    /* ios惯性滚动 */
+    -webkit-overflow-scrolling: touch;
+    /* 禁止滚动穿透回弹 */
+    overscroll-behavior-y: contain;
+}
+.story-text{
+    font-size: 4.2vw;
+    line-height:1.9;
+    color:#333;
+    white-space:pre-line;
+    padding-bottom:20px;
+}
+.btn-box{
+    display:flex;
+    gap:3vw;
+    justify-content:center;
+    margin-top:6vh;
+}
+.story-btn{
+    padding: 2.5vw 6vw;
+    border:none;
+    border-radius:10px;
+    background:#d4af37;
+    color:#fff;
+    font-size:4vw;
+    cursor:pointer;
+}
+.story-btn:active{
+    opacity:0.8;
+}
+.back-btn{
+    background:#888;
+}
+/* 底部页码提示 */
+.page-tip{
+    text-align:center;
+    color:#999;
+    font-size:3.2vw;
+    margin-top:12px;
+}
+</style>
+</head>
+<body>
+<div class="story-wrap">
+    <!-- 可垂直滚动文本容器 -->
+    <div class="story-scroll-box" id="scrollWrap">
+        <div class="story-text" id="storyText"></div>
+    </div>
+    <div class="page-tip" id="pageTip"></div>
+    <div class="btn-box">
+        <button class="story-btn back-btn" onclick="backMain()">返回大厅</button>
+        <button class="story-btn" onclick="prevPlot()">上一段</button>
+        <button class="story-btn" onclick="nextPlot()">下一段</button>
+    </div>
+</div>
+<script>
+// 读取url携带的剧情id
+const urlParams = new URLSearchParams(location.search);
+const curStoryId = urlParams.get("id") || "side1";
+
+// 剧情文本库
+const STORY_CONTENT = {
+    main: [
+        "【主线第一章】\n清晨你在庭院等候，心仪的角色早已在此等待。\n对方看见你，快步走来，眉眼间藏不住欣喜。",
+        "你们并肩漫步花园，对方和你诉说心底长久埋藏的过往与烦恼。",
+        "夕阳铺满整片院落，二人坦诚心意，主线第一章全部完结。"
+    ],
+    main2: [
+        "【主线第二章】\n角色近日遇上棘手难题，特意来找你寻求帮助。",
+        "你全程陪同对方处理麻烦，一路相伴，彼此羁绊大幅加深。",
+        "深夜凉亭谈心，互诉心事，主线第二章剧情全部结束。"
+    ],
+    side1: ["【支线·花园闲谈】\n午后在花园偶遇角色，二人简单闲聊日常琐事。","轻松惬意的短暂相处，本段支线剧情完结。"],
+    side2: ["【支线·外出散步】\n相约出门沿街闲逛，沿途观赏街边风景。","一路欢声笑语，轻松支线故事到此结束。"],
+    side3: ["【支线·午后茶会】\n共享精致点心与热茶，悠闲闲谈消磨时光。","温馨的午后时光，支线剧情完毕。"],
+    special1: ["【特殊·月下约会】\n皓月当空，仅有你与对方二人独处庭院。","对方吐露深藏心底的爱慕，高额奖励专属剧情完结。"],
+    special2: ["【特殊·生日限定】\n今日是角色生辰，你送上精心准备的礼物。","专属生日限定故事全部看完。"],
+    specialGarden: [
+        "【特殊·御花园偶遇】\n外出打工赶路途中，你误入幽静的皇家御花园。",
+        "满园名贵鲜花盛放，你撞见独自散心的角色，对方见到你十分惊喜。",
+        "二人在花海之中漫步闲谈，避开旁人独处，羁绊大幅提升。",
+        "夕阳西下，御花园专属特殊剧情全部完结，返回大厅领取高额奖励！"
+    ]
+};
+
+// 奖励配置，与main、work完全统一
+const STORY_REWARD_MAP = {
+    "main": {favor:250, gold:2000},
+    "main2": {favor:350, gold:3000},
+    "side1": {favor:80, gold:500},
+    "side2": {favor:100, gold:600},
+    "side3": {favor:120, gold:700},
+    "special1": {favor:500, gold:5000},
+    "special2": {favor:600, gold:6000},
+    "specialGarden": {favor:450, gold:4200}
+};
+
+let curPlotIndex = 0;
+let rewardSaved = false;
+// 滑动手势变量
+let touchStartX = 0;
+let touchEndX = 0;
+const slideThreshold = 60; // 滑动60px判定翻页
+// 兜底不存在剧情id
+const currentStoryList = STORY_CONTENT[curStoryId] ?? STORY_CONTENT.side1;
+const currentReward = STORY_REWARD_MAP[curStoryId] ?? STORY_REWARD_MAP.side1;
+
+// 更新底部页码提示
+function updatePageTip(){
+    document.getElementById("pageTip").innerText = `剧情 ${curPlotIndex+1} / ${currentStoryList.length}`;
+}
+
+// 初始化第一段剧情
+function initPlot() {
+    document.getElementById("storyText").innerText = currentStoryList[curPlotIndex];
+    updatePageTip();
+    // 滚动条重置到顶部
+    document.getElementById("scrollWrap").scrollTop = 0;
+}
+
+// 上一段剧情
+function prevPlot(){
+    if(curPlotIndex <= 0){
+        alert("已经是第一段剧情");
+        return;
+    }
+    curPlotIndex--;
+    initPlot();
+}
+
+// 下一段剧情（原有逻辑不变）
+function nextPlot() {
+    curPlotIndex++;
+    // 判断是否看完所有段落
+    if (curPlotIndex >= currentStoryList.length) {
+        if(rewardSaved){
+            alert("剧情已全部看完，奖励已保存，无需重复操作！");
+            return;
+        }
+        try {
+            const rewardStr = JSON.stringify(currentReward);
+            localStorage.setItem("storyFinishReward", rewardStr);
+            rewardSaved = true;
+            alert("全部剧情观看完毕！即将自动返回大厅领取好感与金币奖励");
+            setTimeout(()=>{
+                window.location.href = "main.html";
+            }, 1200);
+        } catch (err) {
+            console.error("存储失败：", err);
+            alert("浏览器存储异常，奖励保存失败，请清理缓存重试！");
+            curPlotIndex = currentStoryList.length - 1;
+            initPlot();
+        }
+        return;
+    }
+    initPlot();
+}
+
+// 手动返回大厅
+function backMain() {
+    if(!rewardSaved){
+        alert("尚未看完完整剧情，本次无奖励！");
+    }
+    window.location.href = "main.html";
+}
+
+// 触摸滑动监听（左右滑翻页）
+const scrollBox = document.getElementById("scrollWrap");
+scrollBox.addEventListener("touchstart", function(e){
+    touchStartX = e.touches[0].clientX;
+});
+scrollBox.addEventListener("touchend", function(e){
+    touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    // 右滑>60px：上一段
+    if(diff > slideThreshold){
+        prevPlot();
+    }
+    // 左滑<-60px：下一段
+    else if(diff < -slideThreshold){
+        nextPlot();
+    }
+});
+
+window.onload = function() {
+    initPlot();
+}
+</script>
+</body>
+</html>

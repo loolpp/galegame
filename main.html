@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <script>
+        // 页面渲染前优先读取本地标记，永久隐藏遮罩
+        if (localStorage.getItem("isLandscapeConfirmed") === "true") {
+            document.documentElement.classList.add("alreadyLand");
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content=" ">
+    <title> </title>
+    <style>
+        html,
+        body {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+
+        *::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        :fullscreen,
+        :-webkit-full-screen,
+        :-moz-full-screen {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        ::backdrop,
+        :-webkit-full-screen::backdrop {
+            display: none !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 只有未授权才显示横屏提示 */
+        .portrait-mask {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            color: #fff;
+            font-size: 20px;
+            text-align: center;
+            padding-top: 40vh;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        @media (orientation: portrait) {
+            html:not(.alreadyLand) .portrait-mask {
+                display: flex;
+                background: rgba(0, 0, 0.5);
+            }
+
+            html:not(.alreadyLand) .need-hide .game-container {
+                display: none !important;
+            }
+        }
+
+        body {
+            font-family: "微软雅黑", sans-serif;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "header header"
+                "main func-area";
+            background-size: cover;
+            background-position: center;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 9999 !important;
+            transition: background 0.5s ease;
+        }
+
+        /* 修复头部：纵向排列，上下分行，不会错位 */
+        .header {
+            grid-area: header;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 15px;
+            z-index: 10;
+        }
+
+        /* 第一行：左人物 右按钮 单行不换行 */
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .header-left-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-section {
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .role-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #d4af37;
+            object-fit: cover;
+        }
+
+        .role-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .role-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+
+        .role-favor {
+            font-size: 14px;
+            color: #d4af37;
+        }
+
+        .char-switch {
+            display: flex;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        .char-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: 0 2px 5 rgba(0, 0, 0.2);
+            transition: 0.2s;
+        }
+
+        .char-btn.active {
+            border-color: #d4af37;
+            transform: scale(1.1);
+        }
+
+        .char-btn img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .top-func {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            padding: 8px 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .func-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background-color: #f0e6d2;
+            color: #8B4513;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .func-btn:hover {
+            background-color: #d4af37;
+            color: #fff;
+        }
+
+        /* 第二行：资源信息栏，缩小字体，左对齐人物下方 */
+        .resource-bar {
+            margin-left: 12px;
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            color: #333;
+            flex-wrap: wrap;
+        }
+
+        .main-section {
+            grid-area: main;
+            position: relative;
+        }
+
+        .func-area {
+            grid-area: func-area;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 20px;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .bottom-func-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .bottom-func-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.85);
+            color: #8B4513;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .bottom-func-btn:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .bottom-func-btn:hover:not(:disabled) {
+            background-color: #d4af37;
+            color: #fff;
+        }
+
+        .train-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #d4af37;
+            background-color: rgba(255, 255, 0.9);
+            color: #8B4513;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .train-btn:hover {
+            transform: scale(1.05);
+            background-color: #d4af37;
+            color: #fff;
+        }
+
+        @media (max-height: 400px) {
+            .role-avatar {
+                width: 45px;
+                height: 45px;
+            }
+
+            .role-name {
+                font-size: 16px;
+            }
+
+            .func-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+
+            .train-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 14px;
+            }
+
+            .bottom-func-btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+
+        /* ========== 新增调试弹窗样式 ========== */
+        .debug-mask {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .debug-panel {
+            width: 70vw;
+            max-width: 750px;
+            max-height: 80vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 14px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .debug-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .debug-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #d4af37;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .debug-group {
+            margin-bottom: 14px;
+        }
+
+        .debug-group h4 {
+            color: #8B4513;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .debug-btn-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .debug-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background: #f0e6d2;
+            color: #333;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .debug-btn:hover {
+            background: #d4af37;
+            color: #fff;
+        }
+
+        .debug-btn.danger {
+            background: #ffdddd;
+            color: #b32424;
+        }
+
+        .debug-btn.danger:hover {
+            background: #dd4444;
+            color: white;
+        }
+
+        /* 剧情分类弹窗样式 */
+        .story-mask {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 10002;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .story-panel {
+            width: 75vw;
+            max-width: 680px;
+            background: #fffdf6;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .story-title-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .story-title {
+            font-size: 22px;
+            color: #8B4513;
+            font-weight: bold;
+        }
+
+        .story-close-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: #d4af37;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .story-type-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .story-type-box {
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .story-type-name {
+            font-size: 18px;
+            color: #8B4513;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .story-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .story-entry-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .story-entry-btn {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 6px;
+            background: #f0e6d2;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .story-entry-btn:hover {
+            background: #d4af37;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="portrait-mask">请将手机横向放置游玩</div>
+    <div class="game-container">
+        <div class="header">
+            <!-- 第一行：左侧人物 + 右侧功能按钮，单行不挤压 -->
+            <div class="header-top-row">
+                <div class="header-left-group">
+                    <div class="role-section">
+                        <img id="currentAvatar" src="" alt="头像" class="role-avatar">
+                        <div class="role-info">
+                            <div id="currentName" class="role-name"></div>
+                            <div class="role-favor">好感度：<span id="roleFavor">0</span>（总：<span id="totalFavor">0</span>）
+                            </div>
+                            <!-- 统一紫色 #7722bb，字号14px和好感一致 -->
+                            <div
+                                style="font-size:14px; margin-top:4px; display:flex; gap:6px; flex-wrap:wrap; color:#7722bb;">
+                                <span>时段:<span id="timeText"></span></span>
+                                <span>体力:<span id="staminaText"></span></span>
+                                <span>金币:<span id="moneyText"></span></span>
+                                <span>灵晶:<span id="lingjingText"></span></span>
+                                <span>宝石:<span id="baoshiText"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="char-switch" id="charSwitch"></div>
+                </div>
+                <div class="top-func">
+                    <button class="func-btn" onclick="openSetting()">⚙️</button>
+                    <button class="func-btn" onclick="openMail()">✉️</button>
+                    <!-- 新增调试按钮 -->
+                    <button class="func-btn" onclick="openDebugPanel()">🛠️</button>
+                </div>
+            </div>
+        </div>
+        <div class="main-section"></div>
+        <div class="func-area">
+            <div class="bottom-func-group">
+                <!-- 修正：婚姻系统绑定婚姻函数，好感不足禁用 -->
+                <button class="bottom-func-btn" id="marryBtn" disabled onclick="openMarrySys()">婚姻系统</button>
+                <!-- 外出打工独立按钮，永久可用不会灰色 -->
+                <button class="bottom-func-btn" onclick="openWorkSys()">外出打工</button>
+                <button class="bottom-func-btn" onclick="openShopSys()">商店</button>
+                <button class="bottom-func-btn" onclick="openBag()">背包</button>
+                <button class="bottom-func-btn" onclick="jumpToStory()">剧情</button>
+
+            </div>
+            <button class="train-btn" onclick="jumpToPeiyan()">角色培养</button>
+        </div>
+    </div>
+    <!-- 剧情分类选择弹窗 -->
+    <div class="story-mask" id="storyMask">
+        <div class="story-panel">
+            <div class="story-title-wrap">
+                <div class="story-title">剧情选择</div>
+                <button class="story-close-btn" onclick="closeStorySelect()">×</button>
+            </div>
+            <div class="story-type-group">
+                <!-- 主线剧情 -->
+                <div class="story-type-box">
+                    <div class="story-type-name">主线剧情</div>
+                    <div class="story-desc">角色核心主线，大量好感与金币奖励，每日1次</div>
+                    <div class="story-entry-btns">
+                        <button class="story-entry-btn" onclick="openStoryPage('main')">开启主线第一章</button>
+                        <button class="story-entry-btn" onclick="openStoryPage('main2')">开启主线第二章</button>
+                    </div>
+                </div>
+                <!-- 支线剧情 -->
+                <div class="story-type-box">
+                    <div class="story-type-name">支线剧情</div>
+                    <div class="story-desc">日常互动小故事，少量资源，不限次数</div>
+                    <div class="story-entry-btns">
+                        <button class="story-entry-btn" onclick="openStoryPage('side1')">花园闲谈</button>
+                        <button class="story-entry-btn" onclick="openStoryPage('side2')">外出散步</button>
+                        <button class="story-entry-btn" onclick="openStoryPage('side3')">午后茶会</button>
+                    </div>
+                </div>
+                <!-- 特殊剧情（含打工御花园） -->
+                <div class="story-type-box">
+                    <div class="story-type-name">特殊限定剧情</div>
+                    <div class="story-desc">高额奖励，部分有解锁条件，打工概率触发御花园</div>
+                    <div class="story-entry-btns">
+                        <button class="story-entry-btn" onclick="openStoryPage('special1')">月下约会(总好感800解锁)</button>
+                        <button class="story-entry-btn" onclick="openStoryPage('special2')">生日专属剧情(限时)</button>
+                        <button class="story-entry-btn" onclick="openStoryPage('specialGarden')">御花园偶遇(打工随机解锁)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 新增调试弹窗DOM -->
+    <div class="debug-mask" id="debugMask">
+        <div class="debug-panel">
+            <div class="debug-title">
+                <span>游戏调试控制台（全功能）</span>
+                <button class="debug-close" onclick="closeDebugPanel()">×</button>
+            </div>
+
+            <!-- 1. 资源调试 -->
+            <div class="debug-group">
+                <h4>【资源金币/体力】</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn" onclick="debugAddMoney(5000)">金币+5000</button>
+                    <button class="debug-btn" onclick="debugAddMoney(50000)">金币+5万</button>
+                    <button class="debug-btn" onclick="debugFullStamina()">体力回满</button>
+                    <button class="debug-btn" onclick="debugSetStamina(0)">清空体力</button>
+                </div>
+            </div>
+
+            <!-- 2. 货币灵晶宝石 -->
+            <div class="debug-group">
+                <h4>【灵晶/宝石】</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn" onclick="debugAddLingjing(100)">灵晶+100</button>
+                    <button class="debug-btn" onclick="debugAddLingjing(1000)">灵晶+1000</button>
+                    <button class="debug-btn" onclick="debugAddBaoshi(50)">宝石+50</button>
+                    <button class="debug-btn" onclick="debugAddBaoshi(500)">宝石+500</button>
+                </div>
+            </div>
+
+            <!-- 3. 角色好感 -->
+            <div class="debug-group">
+                <h4>【角色好感】</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn" onclick="debugAddFavor(100)">当前角色好感+100</button>
+                    <button class="debug-btn" onclick="debugAddFavor(500)">当前角色好感+500（解锁婚姻）</button>
+                    <button class="debug-btn" onclick="debugMaxAllFavor()">全部角色好感拉满9999</button>
+                    <button class="debug-btn" onclick="debugClearCurFavor()">清空当前角色好感</button>
+                </div>
+            </div>
+
+            <!-- 4. 游戏时间/时段跳转【新增取消锁定按钮】 -->
+            <div class="debug-group">
+                <h4>【游戏时间/时段跳转】</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn" onclick="debugJumpMorning()">直接切早晨</button>
+                    <button class="debug-btn" onclick="debugJumpNoon()">直接切中午</button>
+                    <button class="debug-btn" onclick="debugJumpNight()">直接切夜晚（自动回满体力）</button>
+                    <button class="debug-btn" onclick="debugAddGameDay(1)">游戏天数+1</button>
+                    <button class="debug-btn" onclick="debugAddGameDay(10)">游戏天数+10</button>
+                    <button class="debug-btn" onclick="debugClearDebugTime()">取消锁定时段(恢复真实时间)</button>
+                </div>
+            </div>
+
+            <!-- 5. 剧情&功能触发 -->
+            <div class="debug-group">
+                <h4>【剧情&功能一键触发】</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn" onclick="randomStoryInterface()">触发御花园随机剧情</button>
+                    <button class="debug-btn" onclick="openMarrySys()">直接打开婚姻系统</button>
+                    <button class="debug-btn" onclick="openWorkSys()">一键打工一次</button>
+                    <button class="debug-btn" onclick="requestFullscreen()">强制全屏</button>
+                    <button class="debug-btn" onclick="saveLandAuth()">永久解锁横屏（关闭旋转提示）</button>
+                </div>
+            </div>
+
+            <!-- 6. 存档控制 -->
+            <div class="debug-group">
+                <h4>【存档管理】危险操作</h4>
+                <div class="debug-btn-wrap">
+                    <button class="debug-btn danger" onclick="debugResetAllSave()">清空全部本地存档（角色/资源/背包）</button>
+                    <button class="debug-btn" onclick="refreshAllUI()">强制刷新全部界面</button>
+                    <button class="debug-btn"
+                        onclick="console.log(JSON.stringify(loadResourceData(),null,2));alert('已打印资源存档到控制台')">打印资源存档</button>
+                    <button class="debug-btn"
+                        onclick="console.log(JSON.stringify(characters,null,2));alert('已打印角色数据到控制台')">打印角色数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop preload="auto" style="display:none;">
+        <source src="yinyue.mp3" type="audio/mpeg">
+
+        <script>
+            // 劫持本地存储，修改后全局派发同步事件，修复跨页不同步
+            const originSetItem = localStorage.setItem;
+            const originRemoveItem = localStorage.removeItem;
+            localStorage.setItem = function (key, val) {
+                originSetItem.call(localStorage, key, val);
+                window.dispatchEvent(new CustomEvent("localChange", {
+                    detail: { key, value: val }
+                }));
+            };
+            localStorage.removeItem = function (key) {
+                originRemoveItem.call(localStorage, key);
+                window.dispatchEvent(new CustomEvent("localChange", {
+                    detail: { key, value: null }
+                }));
+            };
+
+            // 仅保留全屏函数
+            function requestFullscreen() {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) docEl.requestFullscreen();
+                else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+                else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+            }
+
+            // 横屏授权标记
+            function saveLandAuth() {
+                localStorage.setItem("isLandscapeConfirmed", "true");
+                document.documentElement.classList.add("alreadyLand");
+                document.body.classList.remove("need-hide");
+            }
+
+            // ===================== 调试面板全局函数 =====================
+            function openDebugPanel() {
+                document.getElementById("debugMask").style.display = "flex";
+            }
+            function closeDebugPanel() {
+                document.getElementById("debugMask").style.display = "none";
+            }
+
+            // 资源调试
+            window.debugAddMoney = function (num) {
+                addMoney(num);
+                alert(`调试成功：金币 +${num}`);
+            }
+            window.debugFullStamina = function () {
+                const d = loadResourceData();
+                d.stamina = d.maxStamina;
+                saveResourceData(d);
+                refreshAllUI();
+                alert("调试成功：体力已回满");
+            }
+            window.debugSetStamina = function (num) {
+                const d = loadResourceData();
+                d.stamina = num;
+                saveResourceData(d);
+                refreshAllUI();
+                alert(`调试成功：体力设置为 ${num}`);
+            }
+
+            // 灵晶宝石调试
+            window.debugAddLingjing = function (num) {
+                const curr = loadShopCurrency();
+                curr.lingjing += num;
+                localStorage.setItem(SHOP_CURRENCY_KEY, JSON.stringify(curr));
+                refreshShopCurrencyUI();
+                alert(`调试成功：灵晶 +${num}`);
+            }
+            window.debugAddBaoshi = function (num) {
+                const curr = loadShopCurrency();
+                curr.baoshi += num;
+                localStorage.setItem(SHOP_CURRENCY_KEY, JSON.stringify(curr));
+                refreshShopCurrencyUI();
+                alert(`调试成功：宝石 +${num}`);
+            }
+
+            // 好感调试
+            window.debugAddFavor = function (num) {
+                addFavor(num);
+            }
+            window.debugClearCurFavor = function () {
+                const char = characters[currentCharIndex];
+                char.favor = 0;
+                char.totalFavor = 0;
+                updateFavorUI();
+                alert(`调试成功：清空${char.name}全部好感`);
+            }
+            window.debugMaxAllFavor = function () {
+                characters.forEach(c => {
+                    c.favor = 9999;
+                    c.totalFavor = 9999;
+                })
+                updateFavorUI();
+                saveDataToLocalStorage();
+                alert("调试成功：所有角色好感拉满9999，婚姻全部解锁");
+            }
+
+            // 游戏时间调试【增加isDebugTime锁定标记】
+            window.debugJumpMorning = function () {
+                const d = loadResourceData();
+                d.gameRealLastStamp = Date.now() - (0 / GAME_DAY_HOUR) * REAL_DAY_MS;
+                d.nightRefreshFlag = false;
+                d.isDebugTime = true;
+                saveResourceData(d);
+                refreshAllUI();
+                alert("调试成功：已锁定早晨，不会被定时器重置");
+            }
+            window.debugJumpNoon = function () {
+                const d = loadResourceData();
+                d.gameRealLastStamp = Date.now() - (8 / GAME_DAY_HOUR) * REAL_DAY_MS;
+                d.nightRefreshFlag = false;
+                d.isDebugTime = true;
+                saveResourceData(d);
+                refreshAllUI();
+                alert("调试成功：已锁定中午，不会被定时器重置");
+            }
+            window.debugJumpNight = function () {
+                const d = loadResourceData();
+                d.gameRealLastStamp = Date.now() - (16 / GAME_DAY_HOUR) * REAL_DAY_MS;
+                d.nightRefreshFlag = false;
+                d.isDebugTime = true;
+                saveResourceData(d);
+                refreshAllUI();
+                alert("调试成功：已锁定夜晚，体力自动回满");
+            }
+            window.debugAddGameDay = function (num) {
+                const d = loadResourceData();
+                d.gameDayCount += num;
+                saveResourceData(d);
+                refreshAllUI();
+                alert(`调试成功：游戏天数 +${num}`);
+            }
+            // 新增：取消时段锁定，恢复真实时间流动
+            window.debugClearDebugTime = function () {
+                const d = loadResourceData();
+                d.isDebugTime = false;
+                d.gameRealLastStamp = Date.now();
+                saveResourceData(d);
+                refreshAllUI();
+                alert("已取消固定时段，恢复现实时间自动变化");
+            }
+
+            // 存档重置
+            window.debugResetAllSave = function () {
+                if (!confirm("确认清空所有存档？角色、金币、背包、货币全部重置，无法恢复！")) return;
+                localStorage.removeItem(GAME_DATA_KEY);
+                localStorage.removeItem(SHOP_CURRENCY_KEY);
+                localStorage.removeItem("gameCharacterData");
+                localStorage.removeItem("bagData");
+                localStorage.removeItem("currentSelectedChar");
+                location.reload();
+            }
+
+            // ===================== 现实时间换算游戏时间核心配置 =====================
+            const REAL_DAY_MS = 1.5 * 60 * 60 * 1000; // 现实1.5小时 = 游戏1天24小时
+            const GAME_DAY_HOUR = 24;
+            const GAME_SEG_HOUR = 8; // 早/中/晚各8游戏小时
+
+            /**
+             * 计算离线流逝时间【重写：区分调试锁定/正常玩家计时】
+             */
+            function calcGameTimeFlow() {
+                const data = loadResourceData();
+                const nowMs = Date.now();
+
+                // 调试锁定模式：不覆盖基准时间戳
+                if (data.isDebugTime === true) {
+                    const passRealMs = nowMs - data.gameRealLastStamp;
+                    const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+                    const todayHour = passGameHour % GAME_DAY_HOUR;
+                    let period, periodType;
+                    if (todayHour < GAME_SEG_HOUR) {
+                        period = "早晨";
+                        periodType = "morning";
+                        data.nightRefreshFlag = false;
+                    } else if (todayHour < GAME_SEG_HOUR * 2) {
+                        period = "中午";
+                        periodType = "noon";
+                    } else {
+                        period = "夜晚";
+                        periodType = "night";
+                        if (!data.nightRefreshFlag) {
+                            data.stamina = data.maxStamina;
+                            data.nightRefreshFlag = true;
+                        }
+                    }
+                    saveResourceData(data);
+                    return {
+                        gameHour: Number(todayHour.toFixed(1)),
+                        period,
+                        periodType,
+                        gameDay: data.gameDayCount
+                    };
+                }
+
+                // 正常玩家自然计时逻辑（原版不变）
+                if (!data.gameRealLastStamp) {
+                    data.gameRealLastStamp = nowMs;
+                    saveResourceData(data);
+                    return {
+                        gameHour: 0,
+                        period: "早晨",
+                        periodType: "morning",
+                        gameDay: 0
+                    };
+                }
+                const passRealMs = nowMs - data.gameRealLastStamp;
+                const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+                const addDay = Math.floor(passGameHour / GAME_DAY_HOUR);
+                const todayHour = passGameHour % GAME_DAY_HOUR;
+                data.gameDayCount = (data.gameDayCount || 0) + addDay;
+                let period, periodType;
+                if (todayHour < GAME_SEG_HOUR) {
+                    period = "早晨";
+                    periodType = "morning";
+                    data.nightRefreshFlag = false;
+                } else if (todayHour < GAME_SEG_HOUR * 2) {
+                    period = "中午";
+                    periodType = "noon";
+                } else {
+                    period = "夜晚";
+                    periodType = "night";
+                    if (!data.nightRefreshFlag) {
+                        data.stamina = data.maxStamina;
+                        data.nightRefreshFlag = true;
+                    }
+                }
+                // 正常模式才更新基准时间戳
+                data.gameRealLastStamp = nowMs;
+                saveResourceData(data);
+                return {
+                    gameHour: Number(todayHour.toFixed(1)),
+                    period,
+                    periodType,
+                    gameDay: data.gameDayCount
+                };
+            }
+
+            // 刷新界面时段文字
+            function refreshGameTimeUI() {
+                const timeInfo = calcGameTimeFlow();
+                const timeDom = document.getElementById("timeText");
+                if (timeDom) timeDom.innerText = timeInfo.period;
+            }
+
+            // 在线30秒自动刷新时间
+            function startGameTimeTimer() {
+                setInterval(() => {
+                    refreshGameTimeUI();
+                    const d = loadResourceData();
+                    // 只有非调试模式才更新时间戳
+                    if (!d.isDebugTime) {
+                        d.gameRealLastStamp = Date.now();
+                        saveResourceData(d);
+                    }
+                }, 30000);
+            }
+
+            // ===================== 全局金币/体力/时间存档 =====================
+            const GAME_DATA_KEY = "gameResourceData";
+            function getDefaultResourceData() {
+                return {
+                    money: 0,
+                    stamina: 200,
+                    maxStamina: 200,
+                    nightRefreshFlag: false,
+                    gameRealLastStamp: 0,
+                    gameDayCount: 0,
+                    isDebugTime: false // 调试锁定标记
+                }
+            }
+            function loadResourceData() {
+                let save = localStorage.getItem(GAME_DATA_KEY);
+                if (!save) return getDefaultResourceData();
+                return JSON.parse(save);
+            }
+            function saveResourceData(data) {
+                localStorage.setItem(GAME_DATA_KEY, JSON.stringify(data));
+            }
+
+            window.costStamina = function (num) {
+                let data = loadResourceData();
+                if (data.stamina < num) {
+                    alert("体力不足，无法打工！");
+                    return false;
+                }
+                data.stamina -= num;
+                saveResourceData(data);
+                refreshAllUI();
+                return true;
+            }
+            window.addMoney = function (num) {
+                let data = loadResourceData();
+                data.money += num;
+                saveResourceData(data);
+                refreshAllUI();
+            }
+            window.randomStoryInterface = function () {
+                const reward = STORY_REWARD_MAP.specialGarden;
+                localStorage.setItem("storyFinishReward", JSON.stringify(reward));
+                alert("调试：已生成御花园剧情奖励标记，刷新大厅即可领取");
+            }
+
+            function refreshResourceUI() {
+                const d = loadResourceData();
+                const staDom = document.getElementById("staminaText");
+                const goldDom = document.getElementById("moneyText");
+                if (staDom) staDom.innerText = `${d.stamina}/${d.maxStamina}`;
+                if (goldDom) goldDom.innerText = d.money;
+            }
+
+            // ===================== 全局灵晶、宝石 跨页面同步 =====================
+            const SHOP_CURRENCY_KEY = "shopCurrency";
+            function getDefaultShopCurrency() {
+                return {
+                    lingjing: 0,
+                    baoshi: 0
+                }
+            }
+            function loadShopCurrency() {
+                let save = localStorage.getItem(SHOP_CURRENCY_KEY);
+                if (!save) return getDefaultShopCurrency();
+                return JSON.parse(save);
+            }
+            function refreshShopCurrencyUI() {
+                const curr = loadShopCurrency();
+                const lingDom = document.getElementById('lingjingText');
+                const baoDom = document.getElementById('baoshiText');
+                if (lingDom) lingDom.textContent = curr.lingjing;
+                if (baoDom) baoDom.textContent = curr.baoshi;
+            }
+
+            // 统一刷新全部资源
+            function refreshAllUI() {
+                refreshGameTimeUI();
+                refreshResourceUI();
+                refreshShopCurrencyUI();
+            }
+
+            // 统一数据同步处理函数（替换原有storage监听）
+            function syncAllData(e) {
+                const key = e.detail.key;
+                if (key === GAME_DATA_KEY) {
+                    refreshResourceUI();
+                    refreshGameTimeUI();
+                }
+                if (key === SHOP_CURRENCY_KEY) {
+                    refreshShopCurrencyUI();
+                }
+                if (key === "gameCharacterData") {
+                    updateFavorUI();
+                }
+            }
+            // 监听自定义localChange（当前页面修改同步）
+            window.addEventListener("localChange", syncAllData);
+            // 原生storage（其他标签页同步）
+            window.addEventListener("storage", syncAllData);
+
+            // 页面加载
+            window.onload = function () {
+                // 【关键】奖励领取放在最外层，解锁横屏后也能执行
+                checkStoryReward();
+
+                const userConfirmed = localStorage.getItem("isLandscapeConfirmed") === "true";
+                if (!userConfirmed) {
+                    document.body.classList.add("need-hide");
+                    document.addEventListener('touchstart', saveLandAuth, { once: true });
+                    document.addEventListener('click', saveLandAuth, { once: true });
+                }
+
+                setTimeout(requestFullscreen, 300);
+                loadDataFromLocalStorage();
+                renderCharButtons();
+                switchCharacter(0);
+                refreshAllUI();
+                startGameTimeTimer();
+            };
+
+            // ===================== 角色好感、页面跳转原有逻辑完整保留 =====================
+            const characters = [
+                { name: "乔治", avatar: "./tupian/qiaozhi-toupian.jpg", bg: "./tupian/qiaozhi-beijin.jpg", favor: 0, totalFavor: 0 },
+                { name: "鬼鬼", avatar: "./tupian/guigui-tupian.jpg", bg: "./tupian/guigui-beijin.jpg", favor: 0, totalFavor: 0 },
+                { name: "闰土", avatar: "./tupian/runtu-tupian.jpg", bg: "./tupian/runtu-beijin.jpg", favor: 0, totalFavor: 0 },
+                { name: "黄宇顺", avatar: "./tupian/gungtouluoli-toupian.jpg", bg: "./tupian/guangtouluoli-beijing.png", favor: 0, totalFavor: 0 },
+            ];
+            let currentCharIndex = 0;
+            const MARRY_UNLOCK = 500;
+            function loadDataFromLocalStorage() {
+                const savedData = localStorage.getItem("gameCharacterData");
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    characters.forEach((char, index) => {
+                        if (parsedData[index]) {
+                            char.favor = parsedData[index].favor || 0;
+                            char.totalFavor = parsedData[index].totalFavor || 0;
+                        }
+                    })
+                }
+                if (!localStorage.getItem("bagData")) localStorage.setItem("bagData", JSON.stringify([]));
+            }
+            function saveDataToLocalStorage() {
+                localStorage.setItem("gameCharacterData", JSON.stringify(characters));
+            }
+            function renderCharButtons() {
+                const container = document.getElementById("charSwitch");
+                characters.forEach((char, index) => {
+                    const btn = document.createElement("div");
+                    btn.className = "char-btn";
+                    btn.innerHTML = `<img src="${char.avatar}" alt="${char.name}" onerror="this.src='${char.bg}'">`;
+                    btn.onclick = () => switchCharacter(index);
+                    container.appendChild(btn);
+                })
+            }
+            function switchCharacter(index) {
+                currentCharIndex = index;
+                const char = characters[index];
+                const avatarImg = document.getElementById("currentAvatar");
+                avatarImg.src = char.avatar;
+                avatarImg.onerror = function () { this.src = char.bg };
+                document.getElementById("currentName").innerText = char.name;
+                document.querySelector(".game-container").style.background = `url(${char.bg}) center / cover`;
+                document.querySelectorAll(".char-btn").forEach((b, i) => b.classList.toggle("active", i === index));
+                localStorage.setItem("currentSelectedChar", index);
+                updateFavorUI();
+            }
+            function updateFavorUI() {
+                const char = characters[currentCharIndex];
+                document.getElementById("roleFavor").innerText = char.favor;
+                document.getElementById("totalFavor").innerText = char.totalFavor;
+                // 仅婚姻按钮根据总好感500判断禁用
+                const marryBtn = document.getElementById("marryBtn");
+                marryBtn.disabled = char.totalFavor < MARRY_UNLOCK;
+                marryBtn.title = char.totalFavor >= MARRY_UNLOCK ? "婚姻系统已解锁" : `需总好感度${MARRY_UNLOCK}解锁`;
+                saveDataToLocalStorage();
+            }
+            function addFavor(num) {
+                const char = characters[currentCharIndex];
+                char.favor += num;
+                char.totalFavor += num;
+                updateFavorUI();
+                alert(`【${char.name}】好感度 +${num}！`);
+            }
+            function jumpToPeiyan() {
+                saveDataToLocalStorage();
+                window.location.href = "peiyan.html";
+            }
+            function openWorkSys() {
+                saveDataToLocalStorage();
+                window.location.href = "work.html";
+            }
+            function openShopSys() { window.location.href = "shangdian.html"; }
+            // 婚姻系统：仅满500总好感才能点击
+            function openMarrySys() {
+                const char = characters[currentCharIndex];
+                alert(`🎉 已与【${char.name}】开启姻缘！`);
+            }
+            function openSetting() { alert("设置界面"); }
+            function openMail() { alert("邮箱：暂无消息"); }
+            function openBag() { window.location.href = "beibao.html"; }
+            const bgAudio = document.getElementById('bgMusic');
+            document.addEventListener('click', () => bgAudio.play().catch(e => { }), { once: true });
+            document.addEventListener('touchstart', () => bgAudio.play().catch(e => { }));
+            // 打开剧情分类弹窗（底部【剧情】按钮调用）
+            function jumpToStory() {
+                document.getElementById("storyMask").style.display = "flex";
+            }
+            // 关闭剧情选择弹窗
+            function closeStorySelect() {
+                document.getElementById("storyMask").style.display = "none";
+            }
+
+            // 各剧情对应奖励配置
+            const STORY_REWARD_MAP = {
+                "main": { favor: 250, gold: 2000 },
+                "main2": { favor: 350, gold: 3000 },
+                "side1": { favor: 80, gold: 500 },
+                "side2": { favor: 100, gold: 600 },
+                "side3": { favor: 120, gold: 700 },
+                "special1": { favor: 500, gold: 5000 },
+                "special2": { favor: 600, gold: 6000 },
+                "specialGarden": { favor: 450, gold: 4200 }
+            };
+
+            // 跳转对应剧情页面，带ID区分主线/支线/特殊/御花园
+            function openStoryPage(storyKey) {
+                const currChar = characters[currentCharIndex];
+                // 月下约会解锁校验：总好感≥800
+                if (storyKey === "special1" && currChar.totalFavor < 800) {
+                    alert(`当前总好感${currChar.totalFavor}，不足800无法开启月下约会！`);
+                    return;
+                }
+                // 御花园解锁校验：必须打工触发过一次才允许手动重温
+                if (storyKey === "specialGarden" && !localStorage.getItem("workStoryDay")) {
+                    alert("需要外出打工随机触发一次御花园剧情，才能手动重温！");
+                    return;
+                }
+                saveDataToLocalStorage();
+                // URL携带剧情id传给story.html
+                window.location.href = `story.html?id=${storyKey}`;
+            }
+
+            // 页面加载自动读取剧情奖励，发放好感金币（保留，放window.onload调用）
+            function checkStoryReward() {
+                const rewardStr = localStorage.getItem("storyFinishReward");
+                if (!rewardStr) return;
+                let reward;
+                try {
+                    reward = JSON.parse(rewardStr);
+                } catch (e) {
+                    localStorage.removeItem("storyFinishReward");
+                    console.error("奖励数据损坏");
+                    return;
+                }
+                if (!reward.favor && !reward.gold) {
+                    localStorage.removeItem("storyFinishReward");
+                    return;
+                }
+                addFavor(reward.favor);
+                addMoney(reward.gold);
+                localStorage.removeItem("storyFinishReward");
+                alert(`剧情通关奖励\n好感 +${reward.favor}\n金币 +${reward.gold}`);
+            }
+        </script>
+</body>
+
+</html>

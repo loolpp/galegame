@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 已删除横屏专用meta标签 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content=" ">
+    <title> </title>
+    <style>
+        /* ========== 全局全屏强制样式（固定不动） ========== */
+        html, body {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+        *::-webkit-scrollbar {
+            display: none !important;
+        }
+        ::backdrop, :-webkit-full-screen::backdrop {
+            display: none !important;
+        }
+        /* ========== 竖屏提示遮罩（保留，仅首次未授权显示） ========== */
+        .portrait-mask {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            color: #fff;
+            font-size: 22px;
+            text-align: center;
+            padding-top: 40vh;
+            z-index: 99999;
+            pointer-events: none;
+        }
+        @media (orientation: portrait) {
+            .portrait-mask {
+                display: flex;
+                background: rgba(0,0,0,0.5);
+            }
+            .need-hide .page-content {
+                display: none !important;
+            }
+        }
+        /* ========== 页面原有样式全部保留 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            font-family: "微软雅黑", sans-serif;
+            width: 100vw !important;
+            height: 100vh !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: url("./tupian/beijing.png") no-repeat center center;
+            background-size: cover;
+            background-attachment: fixed;
+            padding: 0 !important;
+        }
+        .page-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sub-text {
+            font-size: clamp(18px, 5vw, 28px);
+            font-weight: bold;
+            background: linear-gradient(120deg, #ff7eb9, #ffdd00, #7b93ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 8px rgba(255, 126, 185, 0.6), 0 0 20px rgba(123, 147, 0.4);
+            margin-bottom: 60px;
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes btn-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .start-btn {
+            padding: 12px 30px;
+            font-size: 22px;
+            background-color: transparent;
+            background: linear-gradient(120deg, #06e6ee, #ec0739, #89ec06);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: none;
+            text-shadow: 0 0 8px rgba(255, 126, 185, 0.6), 0 0 20px rgba(123, 147, 255, 0.4);
+            margin-top: 30px;
+            margin-left: -100px;
+            display: block;
+            animation: btn-float 2.5s ease-in-out infinite;
+            opacity: 0.65;
+        }
+        .start-btn:hover {
+            transform: scale(1.08);
+            text-shadow: 0 0 12px rgba(255, 126, 185, 0.8), 0 0 25px rgba(123, 147, 255, 0.6);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="">
+    <!-- 遮罩保留：仅首次未授权竖屏显示 -->
+    <div class="portrait-mask">请将手机横向放置游玩</div>
+    <div class="page-content">
+        <p class="sub-text"></p>
+        <button class="start-btn">点击任意处开始游戏</button>
+    </div>
+<script>
+// 仅保留全屏函数，删除screen锁屏相关所有代码
+function requestFullscreen() {
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) docEl.requestFullscreen();
+    else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+    else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+}
+
+window.onload = function() {
+    const userConfirmed = localStorage.getItem("isLandscapeConfirmed") === "true";
+    if (!userConfirmed) {
+        // 首次打开：遮罩提示，点击后标记授权
+        document.body.classList.add("need-hide");
+        const saveAuth = () => {
+            localStorage.setItem("isLandscapeConfirmed", "true");
+            document.body.classList.remove("need-hide");
+        };
+        document.addEventListener('touchstart', saveAuth, { once: true });
+        document.addEventListener('click', saveAuth, { once: true });
+    }
+    setTimeout(requestFullscreen, 300);
+};
+
+// 点击跳转大厅逻辑不变
+document.addEventListener('click', function () {
+    window.location.href = "main.html";
+});
+</script>
+</body>
+</html>

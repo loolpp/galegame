@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content=" ">
+    <title> </title>
+    <style>
+        html,
+        body {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+        *::-webkit-scrollbar {
+            display: none !important;
+        }
+        :fullscreen,
+        :-webkit-full-screen,
+        :-moz-full-screen {
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+        ::backdrop,
+        :-webkit-full-screen::backdrop {
+            display: none !important;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+        }
+        .page-wrap {
+            width: 100%;
+            height: 100%;
+            background: #f8f2e6;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .bag-title {
+            font-size: 30px;
+            color: #8B4513;
+            font-weight: bold;
+        }
+        .back-main-btn {
+            padding: 9px 20px;
+            background: #d4af37;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .tab-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 8px 22px;
+            background: #fff;
+            border-radius: 20px;
+            font-size: 17px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+        .tab.active {
+            background: #d4af37;
+            color: #fff;
+            border-color: #d4af37;
+        }
+        .item-wrap {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 18px;
+            overflow-y: auto;
+        }
+        .item-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        /* 物品图标样式 */
+        .item-icon {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            margin: 0 auto 8px;
+        }
+        .item-name {
+            font-size: 17px;
+            font-weight: bold;
+            color: #333;
+            margin: 6px 0;
+        }
+        .item-tip {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 8px;
+        }
+        .item-num {
+            color: #999;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .use-item-btn {
+            width: 100%;
+            padding: 6px 0;
+            background: #8B4513;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .use-item-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .empty-text {
+            width: 100%;
+            text-align: center;
+            padding-top: 80px;
+            font-size: 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+        <div class="bag-header">
+            <div class="bag-title">我的礼物背包</div>
+            <button class="back-main-btn" onclick="backToHall()">返回大厅</button>
+        </div>
+        <!-- 资源状态栏 -->
+        <div style="display:flex; gap:30px; font-size:18px; color:#8B4513; margin-bottom:16px; flex-wrap:wrap;">
+            <span>当前时段：<span id="timeText"></span></span>
+            <span>体力：<span id="staminaText"></span></span>
+            <span>金币：<span id="moneyText"></span></span>
+            <span>灵晶：<span id="lingjingText"></span></span>
+            <span>宝石：<span id="baoshiText"></span></span>
+        </div>
+        <div class="tab-box">
+            <div class="tab active" data-type="all">全部礼物</div>
+            <div class="tab" data-type="normal">通用礼物</div>
+            <div class="tab" data-type="special">专属礼物</div>
+        </div>
+        <div class="item-wrap" id="itemBox"></div>
+    </div>
+    <script>
+        // 1. 劫持localStorage，全局派发同步事件（修复同页面修改其他页不刷新）
+        const originSetItem = localStorage.setItem;
+        const originRemoveItem = localStorage.removeItem;
+        localStorage.setItem = function(key, val) {
+            originSetItem.call(localStorage, key, val);
+            window.dispatchEvent(new CustomEvent("localChange", {
+                detail: { key, value: val }
+            }));
+        };
+        localStorage.removeItem = function(key) {
+            originRemoveItem.call(localStorage, key);
+            window.dispatchEvent(new CustomEvent("localChange", {
+                detail: { key, value: null }
+            }));
+        };
+
+        // 仅保留全屏，无任何横屏锁定/旋转相关冗余代码
+        function requestFullscreen() {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen();
+            else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+            else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+        }
+
+        // ===================== 与大厅统一：现实时间换算游戏时间 =====================
+        const REAL_DAY_MS = 1.5 * 60 * 60 * 1000;
+        const GAME_DAY_HOUR = 24;
+        const GAME_SEG_HOUR = 8;
+
+        // 2. 重写calcGameTimeFlow，区分调试锁定/正常计时
+        function calcGameTimeFlow() {
+            const data = loadResourceData();
+            const nowMs = Date.now();
+
+            // 调试锁定分支，不覆盖基准时间戳
+            if (data.isDebugTime === true) {
+                const passRealMs = nowMs - data.gameRealLastStamp;
+                const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+                const todayHour = passGameHour % GAME_DAY_HOUR;
+                let period, periodType;
+                if (todayHour < GAME_SEG_HOUR) {
+                    period = "早晨";
+                    periodType = "morning";
+                    data.nightRefreshFlag = false;
+                } else if (todayHour < GAME_SEG_HOUR * 2) {
+                    period = "中午";
+                    periodType = "noon";
+                } else {
+                    period = "夜晚";
+                    periodType = "night";
+                    if (!data.nightRefreshFlag) {
+                        data.stamina = data.maxStamina;
+                        data.nightRefreshFlag = true;
+                    }
+                }
+                saveResourceData(data);
+                return { period, periodType, gameHour: todayHour };
+            }
+
+            // 正常玩家计时逻辑
+            if (!data.gameRealLastStamp) {
+                data.gameRealLastStamp = nowMs;
+                saveResourceData(data);
+                return {
+                    gameHour: 0,
+                    period: "早晨",
+                    periodType: "morning",
+                    gameDay: 0
+                };
+            }
+            const passRealMs = nowMs - data.gameRealLastStamp;
+            const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+            const addDay = Math.floor(passGameHour / GAME_DAY_HOUR);
+            const todayHour = passGameHour % GAME_DAY_HOUR;
+            data.gameDayCount = (data.gameDayCount || 0) + addDay;
+            let period, periodType;
+            if (todayHour < GAME_SEG_HOUR) {
+                period = "早晨";
+                periodType = "morning";
+                data.nightRefreshFlag = false;
+            } else if (todayHour < GAME_SEG_HOUR * 2) {
+                period = "中午";
+                periodType = "noon";
+            } else {
+                period = "夜晚";
+                periodType = "night";
+                if (!data.nightRefreshFlag) {
+                    data.stamina = data.maxStamina;
+                    data.nightRefreshFlag = true;
+                }
+            }
+            data.gameRealLastStamp = nowMs;
+            saveResourceData(data);
+            return { period, periodType, gameHour: todayHour };
+        }
+
+        function refreshGameTimeUI() {
+            const timeInfo = calcGameTimeFlow();
+            const timeDom = document.getElementById("timeText");
+            if (timeDom) timeDom.innerText = timeInfo.period;
+        }
+
+        // ===================== 全局金币/体力/时间存档 =====================
+        const GAME_DATA_KEY = "gameResourceData";
+        // 3. 默认数据新增isDebugTime标记
+        function getDefaultResourceData() {
+            return {
+                money: 0,
+                stamina: 200,
+                maxStamina: 200,
+                nightRefreshFlag: false,
+                gameRealLastStamp: 0,
+                gameDayCount: 0,
+                isDebugTime: false
+            }
+        }
+        function loadResourceData() {
+            let save = localStorage.getItem(GAME_DATA_KEY);
+            if (!save) return getDefaultResourceData();
+            return JSON.parse(save);
+        }
+        function saveResourceData(data) {
+            localStorage.setItem(GAME_DATA_KEY, JSON.stringify(data));
+        }
+
+        // 刷新体力金币
+        function refreshResourceUI() {
+            const d = loadResourceData();
+            const staDom = document.getElementById("staminaText");
+            const goldDom = document.getElementById("moneyText");
+            if (staDom) staDom.innerText = `${d.stamina}/${d.maxStamina}`;
+            if (goldDom) goldDom.innerText = d.money;
+        }
+
+        // ===================== 灵晶宝石存档 =====================
+        const SHOP_CURRENCY_KEY = "shopCurrency";
+        function getDefaultShopCurrency() {
+            return { lingjing: 0, baoshi: 0 };
+        }
+        function loadShopCurrency() {
+            let save = localStorage.getItem(SHOP_CURRENCY_KEY);
+            if (!save) return getDefaultShopCurrency();
+            return JSON.parse(save);
+        }
+        function refreshShopCurrencyUI() {
+            const curr = loadShopCurrency();
+            const lingDom = document.getElementById('lingjingText');
+            const baoDom = document.getElementById('baoshiText');
+            if (lingDom) lingDom.textContent = curr.lingjing;
+            if (baoDom) baoDom.textContent = curr.baoshi;
+        }
+
+        // 统一刷新全部资源
+        function refreshAllResource() {
+            refreshGameTimeUI();
+            refreshResourceUI();
+            refreshShopCurrencyUI();
+        }
+
+        // 4. 统一同步处理函数，双监听localChange + storage
+        function syncAllData(e) {
+            const key = e.detail.key;
+            if (key === GAME_DATA_KEY) {
+                refreshResourceUI();
+                refreshGameTimeUI();
+            }
+            if (key === SHOP_CURRENCY_KEY) {
+                refreshShopCurrencyUI();
+            }
+            if (key === "bagData" || key === "gameCharacterData") {
+                initBag();
+            }
+        }
+        window.addEventListener("localChange", syncAllData);
+        window.addEventListener("storage", syncAllData);
+
+        // 5. 兜底30秒定时刷新时段，防止事件漏触发
+        setInterval(() => {
+            refreshGameTimeUI();
+        }, 30000);
+
+        // 页面加载
+        window.onload = function () {
+            setTimeout(requestFullscreen, 400);
+            initBag();
+            refreshAllResource();
+        }
+
+        // ==================== 原有背包逻辑完全不动 ====================
+        const itemConfig = {
+            "鲜花": {
+                type: "normal",
+                favor: 20,
+                desc: "通用礼物，好感+20",
+                owner: "all",
+                iconSrc: "./tupian/flower.png"
+            },
+            "巧克力": {
+                type: "normal",
+                favor: 30,
+                desc: "通用礼物，好感+30",
+                owner: "all",
+                iconSrc: "./tupian/chocolate.png"
+            },
+            "定制钥匙链": {
+                type: "normal",
+                favor: 50,
+                desc: "通用礼物，好感+50",
+                owner: "all",
+                iconSrc: "./tupian/keychain.png"
+            },
+            "手工饼干": {
+                type: "normal",
+                favor: 100,
+                desc: "通用礼物，好感+100",
+                owner: "all",
+                iconSrc: "./tupian/cookie.png"
+            },
+            "音乐盒": {
+                type: "normal",
+                favor: 50,
+                desc: "通用礼物，好感+50",
+                owner: "all",
+                iconSrc: "./tupian/musicbox.png"
+            },
+            "星座书签": {
+                type: "normal",
+                favor: 30,
+                desc: "通用礼物，好感+30",
+                owner: "all",
+                iconSrc: "./tupian/bookmark.png"
+            },
+            "香烟smoke": {
+                type: "special",
+                favor: 100,
+                desc: "皮特专属礼物",
+                owner: "皮特",
+                iconSrc: "./tupian/cigarette.png"
+            },
+            "游戏手柄": {
+                type: "special",
+                favor: 150,
+                desc: "闰土、鬼鬼专属礼物",
+                owner: "闰土,鬼鬼",
+                iconSrc: "./tupian/controller.png"
+            },
+            "签名足球": {
+                type: "special",
+                favor: 200,
+                desc: "乔治专属礼物",
+                owner: "乔治",
+                iconSrc: "./tupian/football.png"
+            },
+            "外星人笔记本电脑": {
+                type: "special",
+                favor: 300,
+                desc: "顺子专属礼物",
+                owner: "顺子",
+                iconSrc: "./tupian/laptop.png"
+            },
+            "八重神子手办": {
+                type: "special",
+                favor: 120,
+                desc: "杨思妍专属礼物",
+                owner: "杨思妍",
+                iconSrc: "./tupian/figure1.png"
+            },
+            "狗头手办": {
+                type: "special",
+                favor: 120,
+                desc: "鬼头专属礼物",
+                owner: "鬼头",
+                iconSrc: "./tupian/figure2.png"
+            }
+        };
+        let currentCharIdx = 0;
+        let charList = [];
+        let bagData = [];
+        function initBag() {
+            currentCharIdx = Number(localStorage.getItem("currentSelectedChar")) || 0;
+            const charSave = localStorage.getItem("gameCharacterData");
+            if (charSave) charList = JSON.parse(charSave);
+            bagData = JSON.parse(localStorage.getItem("bagData") || "[]");
+            const tabs = document.querySelectorAll(".tab");
+            tabs.forEach(t => {
+                t.onclick = function () {
+                    tabs.forEach(x => x.classList.remove("active"));
+                    this.classList.add("active");
+                    renderBag(this.dataset.type);
+                }
+            })
+            renderBag("all");
+        }
+        function renderBag(filterType) {
+            const box = document.getElementById("itemBox");
+            box.innerHTML = "";
+            const currCharName = charList[currentCharIdx]?.name || "";
+            let showList = bagData;
+            if (filterType !== "all") {
+                showList = bagData.filter(item => itemConfig[item.name]?.type === filterType);
+            }
+            if (showList.length === 0) {
+                box.innerHTML = `<div class="empty-text">背包空空如也，前往商店购买礼物吧</div>`;
+                return;
+            }
+            showList.forEach(item => {
+                const cfg = itemConfig;
+                const div = document.createElement("div");
+                div.className = "item-card";
+                let canSend = true;
+                let tipText = "赠送当前角色";
+                if (cfg[item.name].type === "special" && !cfg[item.name].owner.includes(currCharName)) {
+                    canSend = false;
+                    tipText = `仅${cfg[item.name].owner}可用`;
+                }
+                div.innerHTML = `
+                    <img class="item-icon" src="${cfg[item.name].iconSrc}" alt="${item.name}">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-tip">${cfg[item.name].desc}</div>
+                    <div class="item-num">持有数量：${item.num}</div>
+                    <button class="use-item-btn" data-name="${item.name}" ${canSend ? "" : "disabled"}>${tipText}</button>
+                `;
+                box.appendChild(div);
+                div.querySelector(".use-item-btn").onclick = () => sendGift(item.name);
+            })
+        }
+        function sendGift(itemName) {
+            const cfg = itemConfig[itemName];
+            let targetIdx = -1;
+            for (let i = 0; i < bagData.length; i++) {
+                if (bagData[i].name === itemName) {
+                    targetIdx = i;
+                    break;
+                }
+            }
+            if (targetIdx === -1 || bagData[targetIdx].num <= 0) {
+                alert("该物品数量不足！");
+                return;
+            }
+            bagData[targetIdx].num -= 1;
+            if (bagData[targetIdx].num <= 0) bagData.splice(targetIdx, 1);
+            localStorage.setItem("bagData", JSON.stringify(bagData));
+            if (cfg.type === "normal") {
+                charList[currentCharIdx].favor += cfg.favor;
+                charList[currentCharIdx].totalFavor += cfg.favor;
+                localStorage.setItem("gameCharacterData", JSON.stringify(charList));
+                alert(`赠送${itemName}成功！当前角色好感 +${cfg.favor}`);
+            } else {
+                alert(`专属礼物，请切换对应专属角色后再赠送`);
+            }
+            const activeTab = document.querySelector(".tab.active").dataset.type;
+            renderBag(activeTab);
+        }
+        function backToHall() {
+            window.location.href = "main.html";
+        }
+    </script>
+</body>
+</html>

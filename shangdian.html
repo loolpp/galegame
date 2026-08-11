@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content=" ">
+    <title>商店</title>
+    <style>
+        html,
+        body {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+        *::-webkit-scrollbar {
+            display: none !important;
+        }
+        :fullscreen,
+        :-webkit-full-screen,
+        :-moz-full-screen {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        ::backdrop,
+        :-webkit-full-screen::backdrop {
+            display: none !important;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #ffebf0;
+            padding: 20px !important;
+            height: 100vh !important;
+            overflow-y: auto !important;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            height: 100%;
+            padding-top: 60px;
+            box-sizing: border-box;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #d81b60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0.1);
+            z-index: 10;
+        }
+        .back-btn:hover {
+            background: #ad1457;
+        }
+        .back-icon {
+            width: 20px;
+            height: 20px;
+        }
+        .title {
+            text-align: center;
+            color: #d81b60;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        .currency-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            flex-wrap: wrap;
+        }
+        .currency-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .currency-icon {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+        .lingjing { color: #4caf50; }
+        .baoshi { color: #2196f3; }
+        .gold { color: #ff9800; }
+        .shop-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .section-title {
+            color: #d81b60;
+            margin-bottom: 15px;
+            font-size: 24px;
+            border-left: 5px solid #d81b60;
+            padding-left: 10px;
+        }
+        .goods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .good-card {
+            border: 1px solid #f8bbd0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fff5f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .good-icon {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .good-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #880e4f;
+            margin-bottom: 8px;
+        }
+        .good-desc {
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+        .good-price {
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .buy-btn {
+            background: #ec407a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            width: 100%;
+        }
+        .buy-btn:hover { background: #d81b60; }
+        .buy-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .exchange-box {
+            background: #fff8e1;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .exchange-desc {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #e65100;
+        }
+        .exchange-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 6px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+        .exchange-btn:hover { background: #f57c00; }
+        @media (max-height: 400px) {
+            .title { font-size: 24px; margin-bottom: 15px; }
+            .currency-box { padding: 10px; gap: 30px; font-size: 16px; }
+            .currency-icon { width: 25px; height: 25px; }
+            .section-title { font-size: 20px; }
+            .goods-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+            .good-icon { width: 50px; height: 50px; }
+            .good-name { font-size: 16px; }
+            .buy-btn { padding: 6px 10px; font-size: 14px; }
+            .back-btn { padding: 8px 15px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" onclick="backToMain()">
+            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M5 12l7 7M5 12l7-7" />
+            </svg>
+            返回大厅
+        </button>
+        <h1 class="title">游戏商店</h1>
+        <div class="currency-box">
+            <div class="currency-item">当前时段：<span id="timeText"></span></div>
+            <div class="currency-item">体力：<span id="staminaText"></span></div>
+            <div class="currency-item gold">金币：<span id="goldText"></span></div>
+            <div class="currency-item lingjing">
+                <img src="./tupian/lingjing-icon.png" alt="灵晶" class="currency-icon">
+                灵晶: <span id="lingjing"></span>
+            </div>
+            <div class="currency-item baoshi">
+                <img src="./tupian/baoshi-icon.png" alt="宝石" class="currency-icon">
+                宝石: <span id="baoshi"></span>
+            </div>
+        </div>
+        <div class="exchange-box">
+            <div class="section-title">金币兑换灵晶</div>
+            <div class="exchange-desc">消耗 1000 金币，兑换 1000 灵晶</div>
+            <button class="exchange-btn" onclick="exchangeGoldToLingjing()">立即兑换</button>
+        </div>
+        <div class="shop-section">
+            <h2 class="section-title">普通商店（消耗灵晶）</h2>
+            <div class="goods-grid" id="normal-shop">
+                <div class="good-card">
+                    <img src="./tupian/flower.png" alt="鲜花" class="good-icon">
+                    <div class="good-name">鲜花</div>
+                    <div class="good-desc">通用 | 好感度+20</div>
+                    <div class="good-price lingjing">价格：300 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(300,'鲜花')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/chocolate.png" alt="巧克力" class="good-icon">
+                    <div class="good-name">巧克力</div>
+                    <div class="good-desc">通用 | 好感度+30</div>
+                    <div class="good-price lingjing">价格：500 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(500,'巧克力')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/keychain.png" alt="定制钥匙链" class="good-icon">
+                    <div class="good-name">定制钥匙链</div>
+                    <div class="good-desc">通用 | 好感度+50</div>
+                    <div class="good-price lingjing">价格：1000 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(1000,'定制钥匙链')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/cookie.png" alt="手工饼干" class="good-icon">
+                    <div class="good-name">手工饼干</div>
+                    <div class="good-desc">通用 | 好感度+100</div>
+                    <div class="good-price lingjing">价格：2000 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(2000,'手工饼干')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/musicbox.png" alt="音乐盒" class="good-icon">
+                    <div class="good-name">音乐盒</div>
+                    <div class="good-desc">通用 | 好感度+50</div>
+                    <div class="good-price lingjing">价格：1000 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(1000,'音乐盒')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/bookmark.png" alt="星座书签" class="good-icon">
+                    <div class="good-name">星座书签</div>
+                    <div class="good-desc">通用 | 好感度+30</div>
+                    <div class="good-price lingjing">价格：500 灵晶</div>
+                    <button class="buy-btn" onclick="buyNormal(500,'星座书签')">购买</button>
+                </div>
+            </div>
+        </div>
+        <div class="shop-section">
+            <h2 class="section-title">专属好感礼物商店（消耗宝石+灵晶）</h2>
+            <div class="goods-grid" id="special-shop">
+                <div class="good-card">
+                    <img src="./tupian/cigarette.png" alt="香烟smoke" class="good-icon">
+                    <div class="good-name">香烟smoke</div>
+                    <div class="good-desc">皮特专属</div>
+                    <div class="good-price">3 宝石 + 2000 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(2000, 3,'香烟smoke')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/controller.png" alt="游戏手柄" class="good-icon">
+                    <div class="good-name">游戏手柄</div>
+                    <div class="good-desc">闰土、鬼鬼专属</div>
+                    <div class="good-price">10 宝石 + 3000 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(3000, 10,'游戏手柄')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/football.png" alt="乔丹签名足球" class="good-icon">
+                    <div class="good-name">签名足球</div>
+                    <div class="good-desc">乔治专属</div>
+                    <div class="good-price">20 宝石 + 5000 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(5000, 20,'签名足球')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/laptop.png" alt="外星人笔记本电脑" class="good-icon">
+                    <div class="good-name">外星人笔记本电脑</div>
+                    <div class="good-price">20 宝石 + 10000 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(10000, 20,'外星人笔记本电脑')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/shenzi_60x60.ico" alt="八重神子手办" class="good-icon">
+                    <div class="good-name">八重神子手办</div>
+                    <div class="good-desc">杨思妍专属</div>
+                    <div class="good-price">30 宝石 + 200 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(200, 30,'八重神子手办')">购买</button>
+                </div>
+                <div class="good-card">
+                    <img src="./tupian/figure2.png" alt="狗头手办" class="good-icon">
+                    <div class="good-name">狗头手办</div>
+                    <div class="good-desc">鬼头专属</div>
+                    <div class="good-price">30 宝石 + 200 灵晶</div>
+                    <button class="buy-btn" onclick="buySpecial(200, 30,'狗头手办')">购买</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 劫持localStorage，全局派发修改事件，解决同页面修改其他页不刷新
+        const originSetItem = localStorage.setItem;
+        const originRemoveItem = localStorage.removeItem;
+        localStorage.setItem = function(key, val) {
+            originSetItem.call(localStorage, key, val);
+            window.dispatchEvent(new CustomEvent("localChange", {
+                detail: { key, value: val }
+            }));
+        };
+        localStorage.removeItem = function(key) {
+            originRemoveItem.call(localStorage, key);
+            window.dispatchEvent(new CustomEvent("localChange", {
+                detail: { key, value: null }
+            }));
+        };
+        function requestFullscreen() {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen();
+            else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+            else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+        }
+        // 全局时间配置（与全部页面统一）
+        const REAL_DAY_MS = 1.5 * 60 * 60 * 1000;
+        const GAME_DAY_HOUR = 24;
+        const GAME_SEG_HOUR = 8;
+        // 重写带isDebugTime分支的时间计算
+        function calcGameTimeFlow() {
+            const data = loadResourceData();
+            const nowMs = Date.now();
+            // 调试锁定模式，不覆盖基准时间戳
+            if (data.isDebugTime === true) {
+                const passRealMs = nowMs - data.gameRealLastStamp;
+                const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+                const todayHour = passGameHour % GAME_DAY_HOUR;
+                let period;
+                if (todayHour < GAME_SEG_HOUR) {
+                    period = "早晨";
+                    data.nightRefreshFlag = false;
+                } else if (todayHour < GAME_SEG_HOUR * 2) {
+                    period = "中午";
+                } else {
+                    period = "夜晚";
+                    if (!data.nightRefreshFlag) {
+                        data.stamina = data.maxStamina;
+                        data.nightRefreshFlag = true;
+                    }
+                }
+                saveResourceData(data);
+                return { period };
+            }
+            // 正常玩家计时逻辑
+            if (!data.gameRealLastStamp) {
+                data.gameRealLastStamp = nowMs;
+                saveResourceData(data);
+                return { period: "早晨" };
+            }
+            const passRealMs = nowMs - data.gameRealLastStamp;
+            const passGameHour = (passRealMs / REAL_DAY_MS) * GAME_DAY_HOUR;
+            const addDay = Math.floor(passGameHour / GAME_DAY_HOUR);
+            const todayHour = passGameHour % GAME_DAY_HOUR;
+            data.gameDayCount = (data.gameDayCount || 0) + addDay;
+            let period;
+            if (todayHour < GAME_SEG_HOUR) {
+                period = "早晨";
+                data.nightRefreshFlag = false;
+            } else if (todayHour < GAME_SEG_HOUR * 2) {
+                period = "中午";
+            } else {
+                period = "夜晚";
+                if (!data.nightRefreshFlag) {
+                    data.stamina = data.maxStamina;
+                    data.nightRefreshFlag = true;
+                }
+            }
+            data.gameRealLastStamp = nowMs;
+            saveResourceData(data);
+            return { period };
+        }
+        function refreshGameTimeUI() {
+            const timeInfo = calcGameTimeFlow();
+            const timeDom = document.getElementById("timeText");
+            if (timeDom) timeDom.innerText = timeInfo.period;
+        }
+        // 全局资源（金币、体力）新增isDebugTime
+        const GAME_DATA_KEY = "gameResourceData";
+        function getDefaultResourceData() {
+            return {
+                money: 0,
+                stamina: 200,
+                maxStamina: 200,
+                nightRefreshFlag: false,
+                gameRealLastStamp: 0,
+                gameDayCount: 0,
+                isDebugTime: false
+            }
+        }
+        function loadResourceData() {
+            let save = localStorage.getItem(GAME_DATA_KEY);
+            if (!save) return getDefaultResourceData();
+            return JSON.parse(save);
+        }
+        function saveResourceData(data) {
+            localStorage.setItem(GAME_DATA_KEY, JSON.stringify(data));
+        }
+        function refreshResourceUI() {
+            const d = loadResourceData();
+            const staDom = document.getElementById("staminaText");
+            const goldDom = document.getElementById("goldText");
+            if (staDom) staDom.innerText = `${d.stamina}/${d.maxStamina}`;
+            if (goldDom) goldDom.innerText = d.money;
+        }
+        // 商店货币（灵晶、宝石）
+        const SHOP_CURRENCY_KEY = "shopCurrency";
+        function getDefaultShopCurrency() {
+            return { lingjing: 0, baoshi: 0 };
+        }
+        function loadShopCurrency() {
+            let save = localStorage.getItem(SHOP_CURRENCY_KEY);
+            if (!save) return getDefaultShopCurrency();
+            return JSON.parse(save);
+        }
+        function saveShopCurrency(obj) {
+            localStorage.setItem(SHOP_CURRENCY_KEY, JSON.stringify(obj));
+        }
+        function refreshShopCurrencyUI() {
+            const curr = loadShopCurrency();
+            document.getElementById('lingjing').textContent = curr.lingjing;
+            document.getElementById('baoshi').textContent = curr.baoshi;
+        }
+        // 统一刷新全部UI
+        function refreshAllGlobalUI() {
+            refreshGameTimeUI();
+            refreshResourceUI();
+            refreshShopCurrencyUI();
+        }
+        // 统一同步处理函数（localChange + storage双监听）
+        function syncAllChange(e) {
+            const key = e.detail.key;
+            if (key === GAME_DATA_KEY) {
+                refreshResourceUI();
+                refreshGameTimeUI();
+            }
+            if (key === SHOP_CURRENCY_KEY) {
+                refreshShopCurrencyUI();
+            }
+        }
+        window.addEventListener("localChange", syncAllChange);
+        window.addEventListener("storage", syncAllChange);
+        // 兜底30秒定时刷新时段，防止事件漏触发
+        setInterval(() => {
+            refreshGameTimeUI();
+        }, 30000);
+        // 金币兑换灵晶
+        window.exchangeGoldToLingjing = function () {
+            const globalRes = loadResourceData();
+            const shopCurr = loadShopCurrency();
+            const costGold = 1000;
+            const getLingjing = 1000;
+            if (globalRes.money < costGold) {
+                alert(`金币不足！需要${costGold}金币`);
+                return;
+            }
+            globalRes.money -= costGold;
+            shopCurr.lingjing += getLingjing;
+            saveResourceData(globalRes);
+            saveShopCurrency(shopCurr);
+            refreshAllGlobalUI();
+            alert(`兑换成功！消耗${costGold}金币，获得${getLingjing}灵晶`);
+        }
+        // 普通商品购买
+        window.buyNormal = function (lingjingCost, itemName) {
+            const curr = loadShopCurrency();
+            if (curr.lingjing >= lingjingCost) {
+                curr.lingjing -= lingjingCost;
+                saveShopCurrency(curr);
+                addItemToBag(itemName, 1);
+                refreshShopCurrencyUI();
+                alert(`购买成功！${itemName}已放入背包`);
+            } else {
+                alert('灵晶不足，无法购买！');
+            }
+        }
+        // 专属商品购买
+        window.buySpecial = function (lingjingCost, baoshiCost, itemName) {
+            const curr = loadShopCurrency();
+            if (curr.lingjing >= lingjingCost && curr.baoshi >= baoshiCost) {
+                curr.lingjing -= lingjingCost;
+                curr.baoshi -= baoshiCost;
+                saveShopCurrency(curr);
+                addItemToBag(itemName, 1);
+                refreshShopCurrencyUI();
+                alert(`购买成功！${itemName}已放入背包`);
+            } else {
+                alert('灵晶或宝石不足，无法购买！');
+            }
+        }
+        // 返回大厅
+        window.backToMain = function () {
+            window.location.href = "main.html";
+        }
+        // 【修复点】存入背包统一使用劫持后的localStorage.setItem，派发localChange事件
+        function addItemToBag(itemName, num) {
+            let bagList = JSON.parse(localStorage.getItem("bagData") || "[]");
+            let existItem = false;
+            for (let i = 0; i < bagList.length; i++) {
+                if (bagList[i].name === itemName) {
+                    bagList[i].num += num;
+                    existItem = true;
+                    break;
+                }
+            }
+            if (!existItem) {
+                bagList.push({ name: itemName, num });
+            }
+            // 这里用劫持后的setItem，自动触发localChange
+            localStorage.setItem("bagData", JSON.stringify(bagList));
+        }
+        // 页面加载初始化
+        window.onload = function () {
+            setTimeout(requestFullscreen, 300);
+            refreshAllGlobalUI();
+        }
+    </script>
+</body>
+</html>
